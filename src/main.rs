@@ -14,9 +14,8 @@ fn main() {
 
     if !go_again {
       break;
-    } else {
-      println!("\n");
     }
+    println!("\n");
   }
 
   println!("Thanks for playing Guess the Number.")
