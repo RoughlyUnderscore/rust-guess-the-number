@@ -1,6 +1,6 @@
+use rand::prelude::*;
 use std::cmp::Ordering;
 use std::io::{self, Write};
-use rand::prelude::*;
 
 fn main() {
   println!("================");
@@ -12,8 +12,11 @@ fn main() {
     game_loop();
     let go_again = new_game_request_loop();
 
-    if !go_again { break; }
-    else { println!("\n"); }
+    if !go_again {
+      break;
+    } else {
+      println!("\n");
+    }
   }
 
   println!("Thanks for playing Guess the Number.")
@@ -95,15 +98,19 @@ fn game_loop() {
         println!("Your guess is too low. Try again.");
         println!("\n");
 
-        if known_lower_bound < current_guess { known_lower_bound = current_guess; }
-      },
+        if known_lower_bound < current_guess {
+          known_lower_bound = current_guess;
+        }
+      }
 
       Ordering::Greater => {
         println!("Your guess is too high. Try again.");
         println!("\n");
 
-        if known_upper_bound > current_guess { known_upper_bound = current_guess; }
-      },
+        if known_upper_bound > current_guess {
+          known_upper_bound = current_guess;
+        }
+      }
 
       Ordering::Equal => {
         println!("Incredible! The number was, in fact, {number}.");
