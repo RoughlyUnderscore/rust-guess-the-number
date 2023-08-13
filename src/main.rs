@@ -1,96 +1,171 @@
-use rand::prelude::*;
 use std::cmp::Ordering;
-use std::{io::Write, *};
+use std::io::{self, Write};
+use rand::prelude::*;
 
 fn main() {
-  loop {
-    let guesses = game_loop();
-    println!("The game took you {guesses} guesses.");
-
-    let mut retry = String::new();
-    println!("Do you want to play again? y/n");
-    immediate_print("> ");
-    io::stdin().read_line(&mut retry).unwrap();
-
-    if retry.trim() == "n".to_string() {
-      break;
-    }
-  }
-}
-
-/**
- * Returns the amount of guesses.
- */
-fn game_loop() -> i32 {
-  let mut lower_limit: i128 = 0;
-  let mut upper_limit: i128 = 0;
-  loop {
-    let (lower_limit_string, upper_limit_string) = input_loop();
-    match (
-      lower_limit_string.trim().parse::<i128>(),
-      upper_limit_string.trim().parse::<i128>(),
-    ) {
-      (Ok(num1), Ok(num2)) => {
-        lower_limit = num1;
-        upper_limit = num2;
-      }
-      (Err(_), Err(_)) => (),
-      (Ok(_), Err(_)) => (),
-      (Err(_), Ok(_)) => (),
-    };
-
-    if lower_limit != 0 && upper_limit != 0 {
-      if lower_limit < upper_limit {
-        break;
-      } else {
-        println!("The lower limit must be lower than the upper limit!");
-      }
-    }
-  }
-
-  let mut rng = thread_rng();
-  let number = rng.gen_range(lower_limit..upper_limit);
-
-  println!("Attempt to guess the number.");
-
-  let mut current_guess: i128;
-  let mut guesses = 0;
+  println!("================");
+  println!("Guess the Number");
+  println!("================");
+  println!("\n");
 
   loop {
-    let mut input = String::new();
+    game_loop();
+    let go_again = new_game_request_loop();
 
-    immediate_print("> ");
-    io::stdin().read_line(&mut input).unwrap();
-    println!("{}", input.trim());
-    current_guess = input.trim().parse().unwrap();
-
-    match current_guess.cmp(&number) {
-      Ordering::Less => println!("Your guess is too low."),
-      Ordering::Greater => println!("Your guess is too high"),
-      Ordering::Equal => break,
-    }
-
-    guesses += 1;
+    if !go_again { break; }
+    else { println!("\n"); }
   }
 
-  println!("Good job! The number was {number}.");
-  guesses
-}
-
-fn input_loop() -> (String, String) {
-  let mut lower_limit_string = String::new();
-  let mut upper_limit_string = String::new();
-
-  immediate_print("Lower limit: ");
-  io::stdin().read_line(&mut lower_limit_string).unwrap();
-
-  immediate_print("Upper limit: ");
-  io::stdin().read_line(&mut upper_limit_string).unwrap();
-
-  (lower_limit_string, upper_limit_string)
+  println!("Thanks for playing Guess the Number.")
 }
 
 fn immediate_print(arg: &str) {
   print!("{arg}");
   io::stdout().flush().unwrap();
+}
+
+fn game_loop() {
+  let mut lower_bound: i64;
+  let mut upper_bound: i64;
+  let number: i64;
+
+  loop {
+    let (lower_bound_string, upper_bound_string) = input_loop();
+    if let Ok(num) = lower_bound_string.trim().parse::<i64>() {
+      lower_bound = num;
+    } else {
+      println!("Did not recognize the first number as a valid 64-bit integer. Try again.");
+      println!("\n");
+      continue;
+    }
+
+    if let Ok(num) = upper_bound_string.trim().parse::<i64>() {
+      upper_bound = num;
+    } else {
+      println!("Did not recognize the second number as a valid 64-bit integer. Try again.");
+      println!("\n");
+      continue;
+    }
+
+    if lower_bound >= upper_bound {
+      println!("The lower bound must be strictly less than the upper bound. Try again.");
+      println!("\n");
+      continue;
+    }
+
+    println!("\n");
+
+    number = thread_rng().gen_range(lower_bound..upper_bound);
+    break;
+  }
+
+  println!("\n");
+
+  let mut current_guess: i64;
+  let mut known_lower_bound: i64 = lower_bound;
+  let mut known_upper_bound: i64 = upper_bound;
+  let mut guesses: u32 = 0;
+
+  loop {
+    println!("Input your current guess. Current known bounds: {known_lower_bound} < x < {known_upper_bound}");
+
+    let mut input = String::new();
+    immediate_print("> ");
+    match io::stdin().read_line(&mut input) {
+      Ok(_) => (),
+      Err(_) => {
+        println!("Could not read the string. Try again.");
+        println!("\n");
+        continue;
+      }
+    }
+
+    if let Ok(num) = input.trim().parse::<i64>() {
+      current_guess = num;
+    } else {
+      println!("Your guess was not a valid 64-bit integer. Try again.");
+      println!("\n");
+      continue;
+    }
+
+    guesses += 1;
+
+    match &current_guess.cmp(&number) {
+      Ordering::Less => {
+        println!("Your guess is too low. Try again.");
+        println!("\n");
+
+        if known_lower_bound < current_guess { known_lower_bound = current_guess; }
+      },
+
+      Ordering::Greater => {
+        println!("Your guess is too high. Try again.");
+        println!("\n");
+
+        if known_upper_bound > current_guess { known_upper_bound = current_guess; }
+      },
+
+      Ordering::Equal => {
+        println!("Incredible! The number was, in fact, {number}.");
+        println!("The game took you {guesses} guesses.");
+        println!("\n");
+
+        return;
+      }
+    }
+  }
+}
+
+fn input_loop() -> (String, String) {
+  let mut lower_bound_string = String::new();
+  let mut upper_bound_string = String::new();
+
+  loop {
+    println!("Input the lower bound");
+    immediate_print("> ");
+    match io::stdin().read_line(&mut lower_bound_string) {
+      Ok(_) => (),
+      Err(_) => {
+        println!("Could not read the string. Try again.");
+        continue;
+      }
+    };
+
+    println!("Input the upper bound");
+    immediate_print("> ");
+    match io::stdin().read_line(&mut upper_bound_string) {
+      Ok(_) => (),
+      Err(_) => {
+        println!("Could not read the string. Try again.");
+        continue;
+      }
+    };
+
+    break;
+  }
+
+  (lower_bound_string, upper_bound_string)
+}
+
+fn new_game_request_loop() -> bool {
+  loop {
+    let mut input = String::new();
+    immediate_print("Would you like to play again? y/n ");
+    match io::stdin().read_line(&mut input) {
+      Ok(_) => (),
+      Err(_) => {
+        println!("Could not read the string. Try again.");
+        continue;
+      }
+    }
+
+    match input.to_lowercase().as_bytes()[0] {
+      b'y' => return true,
+      b'n' => return false,
+      _ => {
+        println!("Did not recognize y/n as the first character. Try again.");
+        continue;
+      }
+    }
+  }
 }
